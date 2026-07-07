@@ -1,7 +1,6 @@
 <?php
 
 use Board\PluginSdk\Contracts\DefinesActivities;
-use Board\PluginSdk\Contracts\EnrichesCards;
 use Board\PluginSdk\Contracts\ProvidesListSource;
 use Board\PluginSdk\Contracts\ProvidesMcpTools;
 use Board\PluginSdk\Contracts\ProvidesOAuth;
@@ -22,7 +21,6 @@ test('the plugin auto-registers into the host registry via its provider', functi
         ->and($plugin->oauthProvider())->toBe('github')
         ->and($plugin)->toBeInstanceOf(ProvidesListSource::class)
         ->and($plugin)->toBeInstanceOf(DefinesActivities::class)
-        ->and($plugin)->toBeInstanceOf(EnrichesCards::class)
         ->and($plugin)->toBeInstanceOf(ProvidesMcpTools::class)
         ->and($plugin)->toBeInstanceOf(ProvidesOAuth::class);
 });
@@ -70,24 +68,3 @@ test('it maps recent commits into read-only list items', function () {
         ->and($items->first()->externalRef)->toBe('abc1234567890');
 });
 
-test('it resolves a commit ref into a card enrichment payload', function () {
-    Http::fake([
-        'api.github.com/repos/*/commits/*' => Http::response([
-            'sha' => 'abc1234567890',
-            'html_url' => 'https://github.com/o/r/commit/abc1234',
-            'commit' => ['message' => "Fix the bug\n\nbody", 'author' => ['name' => 'Octo', 'date' => '2026-07-07T10:00:00Z']],
-        ]),
-    ]);
-
-    $payload = githubPlugin()->resolveCardRef(['token' => 't'], 'commit', 'o/r@abc1234567890');
-
-    expect($payload)->not->toBeNull()
-        ->and($payload['ref_id'])->toBe('abc1234567890')
-        ->and($payload['title'])->toBe('Fix the bug');
-});
-
-test('an unrecognized ref resolves to null without a request', function () {
-    Http::fake(['api.github.com/*' => Http::response([], 404)]);
-
-    expect(githubPlugin()->resolveCardRef(['token' => 't'], 'commit', 'garbage-input'))->toBeNull();
-});

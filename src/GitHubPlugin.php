@@ -4,7 +4,6 @@ namespace Board\PluginGithub;
 
 use Board\PluginGithub\Mcp\GithubCommitsTool;
 use Board\PluginSdk\Contracts\DefinesActivities;
-use Board\PluginSdk\Contracts\EnrichesCards;
 use Board\PluginSdk\Contracts\Plugin;
 use Board\PluginSdk\Contracts\ProvidesListSource;
 use Board\PluginSdk\Contracts\ProvidesMcpTools;
@@ -14,11 +13,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
- * GitHub Power-Up: read-only lists (commits/PRs/issues), card enrichment
- * (link a commit/PR/issue to a card), a dedicated activity tab, and an MCP
- * tool. All user-facing strings come from this package's `github::` translations.
+ * GitHub Power-Up: read-only lists (commits/PRs/issues), a dedicated activity
+ * tab, and an MCP tool. All user-facing strings come from this package's
+ * `github::` translations.
  */
-class GitHubPlugin implements DefinesActivities, EnrichesCards, Plugin, ProvidesListSource, ProvidesMcpTools, ProvidesOAuth
+class GitHubPlugin implements DefinesActivities, Plugin, ProvidesListSource, ProvidesMcpTools, ProvidesOAuth
 {
     public static function key(): string
     {
@@ -150,34 +149,6 @@ class GitHubPlugin implements DefinesActivities, EnrichesCards, Plugin, Provides
         };
     }
 
-    // --- EnrichesCards --------------------------------------------------------
-
-    public function cardRefTypes(): array
-    {
-        return [
-            ['key' => 'commit', 'label' => __('github::messages.ref.commit')],
-            ['key' => 'pull_request', 'label' => __('github::messages.ref.pull_request')],
-            ['key' => 'issue', 'label' => __('github::messages.ref.issue')],
-        ];
-    }
-
-    public function resolveCardRef(array $config, string $type, string $rawRef): ?array
-    {
-        [$repo, $ref] = $this->parseRef($rawRef);
-
-        if ($repo === null || $ref === null) {
-            return null;
-        }
-
-        $client = $this->client($config);
-
-        return match ($type) {
-            'pull_request' => $this->mapPullRef($client->pullRequest($repo, (int) $ref)),
-            'issue' => $this->mapIssueRef($client->issue($repo, (int) $ref)),
-            default => $this->mapCommitRef($client->commit($repo, $ref)),
-        };
-    }
-
     // --- DefinesActivities ----------------------------------------------------
 
     public function activityTab(): array
@@ -217,31 +188,6 @@ class GitHubPlugin implements DefinesActivities, EnrichesCards, Plugin, Provides
     private function client(array $config): GitHubClient
     {
         return new GitHubClient($config['token'] ?? null);
-    }
-
-    /**
-     * Parse "owner/repo@sha", "owner/repo#123" or a github.com URL into
-     * [repo, ref]. Returns [null, null] when unrecognized.
-     *
-     * @return array{0: string|null, 1: string|null}
-     */
-    private function parseRef(string $raw): array
-    {
-        $raw = trim($raw);
-
-        if (preg_match('#github\.com/([^/]+)/([^/]+)/(?:commit|pull|issues)/([A-Za-z0-9]+)#', $raw, $m)) {
-            return [$m[1].'/'.$m[2], $m[3]];
-        }
-
-        if (preg_match('#^([^/\s]+/[^/\s@\#]+)@([A-Za-z0-9]+)$#', $raw, $m)) {
-            return [$m[1], $m[2]];
-        }
-
-        if (preg_match('#^([^/\s]+/[^/\s@\#]+)\#(\d+)$#', $raw, $m)) {
-            return [$m[1], $m[2]];
-        }
-
-        return [null, null];
     }
 
     /**
@@ -312,74 +258,4 @@ class GitHubPlugin implements DefinesActivities, EnrichesCards, Plugin, Provides
         });
     }
 
-    /**
-     * @param  array<string, mixed>|null  $commit
-     * @return array<string, mixed>|null
-     */
-    private function mapCommitRef(?array $commit): ?array
-    {
-        if ($commit === null || empty($commit['sha'])) {
-            return null;
-        }
-
-        $sha = (string) $commit['sha'];
-
-        return [
-            'ref_id' => $sha,
-            'title' => Str::of((string) data_get($commit, 'commit.message', ''))->explode("\n")->first() ?: $sha,
-            'subtitle' => (string) (data_get($commit, 'commit.author.name') ?? '—').' · '.Str::substr($sha, 0, 7),
-            'url' => (string) ($commit['html_url'] ?? ''),
-            'icon' => 'git-commit',
-            'timestamp' => (string) data_get($commit, 'commit.author.date', ''),
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>|null  $pull
-     * @return array<string, mixed>|null
-     */
-    private function mapPullRef(?array $pull): ?array
-    {
-        if ($pull === null || empty($pull['number'])) {
-            return null;
-        }
-
-        $merged = ! empty($pull['merged_at']);
-        $state = (string) ($pull['state'] ?? 'open');
-
-        return [
-            'ref_id' => (string) $pull['number'],
-            'title' => (string) ($pull['title'] ?? ''),
-            'subtitle' => '#'.$pull['number'].' · '.(string) data_get($pull, 'user.login', '—'),
-            'url' => (string) ($pull['html_url'] ?? ''),
-            'badge' => $merged ? 'merged' : $state,
-            'badge_color' => $merged ? 'indigo' : ($state === 'closed' ? 'red' : 'green'),
-            'icon' => 'git-pull-request',
-            'timestamp' => (string) ($pull['updated_at'] ?? ''),
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>|null  $issue
-     * @return array<string, mixed>|null
-     */
-    private function mapIssueRef(?array $issue): ?array
-    {
-        if ($issue === null || empty($issue['number'])) {
-            return null;
-        }
-
-        $state = (string) ($issue['state'] ?? 'open');
-
-        return [
-            'ref_id' => (string) $issue['number'],
-            'title' => (string) ($issue['title'] ?? ''),
-            'subtitle' => '#'.$issue['number'].' · '.(string) data_get($issue, 'user.login', '—'),
-            'url' => (string) ($issue['html_url'] ?? ''),
-            'badge' => $state,
-            'badge_color' => $state === 'closed' ? 'red' : 'green',
-            'icon' => 'circle-dashed',
-            'timestamp' => (string) ($issue['updated_at'] ?? ''),
-        ];
-    }
 }
