@@ -1,0 +1,36 @@
+{
+    "name": "board/plugin-github",
+    "description": "GitHub Power-Up for Board: read-only lists of commits, pull requests and issues.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["board", "kanban", "plugin", "github"],
+    "require": {
+        "php": "^8.3",
+        "board/plugin-sdk": "^0.1",
+        "illuminate/support": "^11 || ^12 || ^13",
+        "illuminate/http": "^11 || ^12 || ^13"
+    },
+    "autoload": {
+        "psr-4": {
+            "Board\\PluginGithub\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Board\\PluginGithub\\GitHubPluginServiceProvider"
+            ]
+        }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../board-plugin-sdk"
+        }
+    ],
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true
+    }
+}
