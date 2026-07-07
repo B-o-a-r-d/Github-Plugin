@@ -6,14 +6,23 @@
     "keywords": ["board", "kanban", "plugin", "github"],
     "require": {
         "php": "^8.3",
-        "board/plugin-sdk": "^0.2",
+        "board/plugin-sdk": "^0.2@dev",
         "illuminate/support": "^11 || ^12 || ^13",
         "illuminate/http": "^11 || ^12 || ^13",
         "laravel/mcp": "^0.8"
     },
+    "require-dev": {
+        "orchestra/testbench": "^9.0 || ^10.0",
+        "pestphp/pest": "^3.0"
+    },
     "autoload": {
         "psr-4": {
             "Board\\PluginGithub\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Board\\PluginGithub\\Tests\\": "tests/"
         }
     },
     "extra": {
@@ -29,9 +38,12 @@
             "url": "../board-plugin-sdk"
         }
     ],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true,
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     }
 }

@@ -8,6 +8,7 @@ use Board\PluginSdk\Contracts\EnrichesCards;
 use Board\PluginSdk\Contracts\Plugin;
 use Board\PluginSdk\Contracts\ProvidesListSource;
 use Board\PluginSdk\Contracts\ProvidesMcpTools;
+use Board\PluginSdk\Contracts\ProvidesOAuth;
 use Board\PluginSdk\PluginListItem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -17,7 +18,7 @@ use Illuminate\Support\Str;
  * (link a commit/PR/issue to a card), a dedicated activity tab, and an MCP
  * tool. All user-facing strings come from this package's `github::` translations.
  */
-class GitHubPlugin implements DefinesActivities, EnrichesCards, Plugin, ProvidesListSource, ProvidesMcpTools
+class GitHubPlugin implements DefinesActivities, EnrichesCards, Plugin, ProvidesListSource, ProvidesMcpTools, ProvidesOAuth
 {
     public static function key(): string
     {
@@ -66,6 +67,33 @@ class GitHubPlugin implements DefinesActivities, EnrichesCards, Plugin, Provides
                 'help' => __('github::messages.oauth.client_secret_help'),
             ],
         ];
+    }
+
+    // --- ProvidesOAuth --------------------------------------------------------
+
+    public function authorizeUrl(): string
+    {
+        return 'https://github.com/login/oauth/authorize';
+    }
+
+    public function tokenUrl(): string
+    {
+        return 'https://github.com/login/oauth/access_token';
+    }
+
+    public function scopes(): array
+    {
+        return ['repo', 'read:org'];
+    }
+
+    public function authorizeParameters(): array
+    {
+        return ['allow_signup' => 'false'];
+    }
+
+    public function resolveAccount(string $accessToken): ?string
+    {
+        return $this->client(['token' => $accessToken])->account()['login'] ?? null;
     }
 
     // --- ProvidesListSource ---------------------------------------------------
