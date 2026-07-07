@@ -2,23 +2,18 @@
 
 namespace Board\PluginGithub;
 
-use Board\PluginSdk\PluginRegistry;
-use Illuminate\Support\ServiceProvider;
+use Board\PluginSdk\Contracts\Plugin;
+use Board\PluginSdk\PluginServiceProvider;
 
 /**
  * Auto-discovered by Laravel (see composer.json `extra.laravel.providers`).
- * Its only job is to register the GitHub plugin into the host's registry, so
- * `composer require board/plugin-github` makes the Power-Up available with no
- * host code changes.
+ * The SDK base provider registers the plugin into the host registry and loads
+ * this package's translations under the `github::` namespace.
  */
-class GitHubPluginServiceProvider extends ServiceProvider
+class GitHubPluginServiceProvider extends PluginServiceProvider
 {
-    public function boot(): void
+    protected function plugin(): Plugin
     {
-        // The host app binds PluginRegistry as a singleton. Guard so the package
-        // stays loadable even outside a Board host (e.g. isolated package tests).
-        if ($this->app->bound(PluginRegistry::class)) {
-            $this->app->make(PluginRegistry::class)->register(new GitHubPlugin);
-        }
+        return new GitHubPlugin;
     }
 }

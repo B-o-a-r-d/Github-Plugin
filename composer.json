@@ -6,9 +6,10 @@
     "keywords": ["board", "kanban", "plugin", "github"],
     "require": {
         "php": "^8.3",
-        "board/plugin-sdk": "^0.1",
+        "board/plugin-sdk": "^0.2",
         "illuminate/support": "^11 || ^12 || ^13",
-        "illuminate/http": "^11 || ^12 || ^13"
+        "illuminate/http": "^11 || ^12 || ^13",
+        "laravel/mcp": "^0.8"
     },
     "autoload": {
         "psr-4": {

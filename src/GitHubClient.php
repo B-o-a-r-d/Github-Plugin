@@ -62,17 +62,17 @@ class GitHubClient
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function recentCommits(string $repo, int $perPage = 15): array
+    public function recentCommits(string $repo, int $limit = 15): array
     {
-        return $this->collection("/repos/{$repo}/commits", ['per_page' => $perPage]);
+        return $this->paged("/repos/{$repo}/commits", [], $limit);
     }
 
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function openPullRequests(string $repo, int $perPage = 15): array
+    public function openPullRequests(string $repo, int $limit = 15): array
     {
-        return $this->collection("/repos/{$repo}/pulls", ['state' => 'open', 'per_page' => $perPage]);
+        return $this->paged("/repos/{$repo}/pulls", ['state' => 'open'], $limit);
     }
 
     /**
@@ -80,12 +80,91 @@ class GitHubClient
      *
      * @return array<int, array<string, mixed>>
      */
-    public function openIssues(string $repo, int $perPage = 15): array
+    public function openIssues(string $repo, int $limit = 15): array
     {
-        return collect($this->collection("/repos/{$repo}/issues", ['state' => 'open', 'per_page' => $perPage]))
-            ->reject(fn (array $issue): bool => isset($issue['pull_request']))
-            ->values()
-            ->all();
+        return $this->paged(
+            "/repos/{$repo}/issues",
+            ['state' => 'open'],
+            $limit,
+            fn (array $issue): bool => ! isset($issue['pull_request']),
+        );
+    }
+
+    /**
+     * Fetch up to $limit items across pages (GitHub caps per_page at 100),
+     * optionally keeping only those passing $keep. Stops at the last page.
+     *
+     * @param  array<string, mixed>  $query
+     * @param  (callable(array<string, mixed>): bool)|null  $keep
+     * @return array<int, array<string, mixed>>
+     */
+    private function paged(string $path, array $query, int $limit, ?callable $keep = null): array
+    {
+        $limit = max(1, $limit);
+        $perPage = min(100, $limit);
+        $items = [];
+
+        for ($page = 1; $page <= 20 && count($items) < $limit; $page++) {
+            $batch = $this->collection($path, array_merge($query, ['per_page' => $perPage, 'page' => $page]));
+
+            if ($batch === []) {
+                break;
+            }
+
+            foreach ($batch as $item) {
+                if ($keep === null || $keep($item)) {
+                    $items[] = $item;
+                }
+            }
+
+            if (count($batch) < $perPage) {
+                break;
+            }
+        }
+
+        return array_slice($items, 0, $limit);
+    }
+
+    /**
+     * A single commit, or null when missing.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function commit(string $repo, string $sha): ?array
+    {
+        return $this->one("/repos/{$repo}/commits/{$sha}");
+    }
+
+    /**
+     * A single pull request, or null when missing.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function pullRequest(string $repo, int $number): ?array
+    {
+        return $this->one("/repos/{$repo}/pulls/{$number}");
+    }
+
+    /**
+     * A single issue, or null when missing.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function issue(string $repo, int $number): ?array
+    {
+        return $this->one("/repos/{$repo}/issues/{$number}");
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function one(string $path): ?array
+    {
+        $response = $this->request()->get($path);
+
+        return $response->successful() && is_array($response->json())
+            ? $response->json()
+            : null;
     }
 
     /**
