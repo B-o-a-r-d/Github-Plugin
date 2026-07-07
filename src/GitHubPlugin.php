@@ -45,11 +45,27 @@ class GitHubPlugin implements Plugin, ProvidesListSource
     }
 
     /**
-     * No instance-level config beyond the OAuth connection itself.
+     * The OAuth app credentials — entered from the host's plugin config modal
+     * (never from environment files), stored encrypted on the instance and used
+     * to drive the OAuth flow.
      */
     public function configFields(array $config = []): array
     {
-        return [];
+        return [
+            [
+                'key' => 'client_id',
+                'label' => 'GitHub OAuth · Client ID',
+                'type' => 'text',
+                'placeholder' => 'Iv1.xxxxxxxxxxxx',
+                'help' => 'Depuis GitHub → Settings → Developer settings → OAuth Apps.',
+            ],
+            [
+                'key' => 'client_secret',
+                'label' => 'GitHub OAuth · Client Secret',
+                'type' => 'password',
+                'help' => 'Laissez vide pour conserver la valeur enregistrée.',
+            ],
+        ];
     }
 
     public function sourceModes(): array
