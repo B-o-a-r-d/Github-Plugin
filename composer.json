@@ -35,7 +35,7 @@
     "repositories": [
         {
             "type": "path",
-            "url": "../board-plugin-sdk"
+            "url": "../Plugin-SDK"
         }
     ],
     "minimum-stability": "dev",

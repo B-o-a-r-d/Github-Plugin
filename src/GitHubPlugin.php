@@ -117,7 +117,8 @@ class GitHubPlugin implements DefinesActivities, Plugin, ProvidesListSource, Pro
                 'type' => 'select',
                 'options' => array_map(fn (array $repo): array => [
                     'value' => $repo['full_name'],
-                    'label' => $repo['full_name'].($repo['private'] ? ' 🔒' : ''),
+                    'label' => $repo['full_name'],
+                    'icon' => $repo['private'] ? 'lock-simple' : null,
                 ], $repos),
             ]];
         }
@@ -243,15 +244,12 @@ class GitHubPlugin implements DefinesActivities, Plugin, ProvidesListSource, Pro
     {
         return collect($issues)->map(function (array $issue): PluginListItem {
             $number = (int) ($issue['number'] ?? 0);
-            $comments = (int) ($issue['comments'] ?? 0);
 
             return new PluginListItem(
                 externalRef: (string) $number,
                 title: (string) ($issue['title'] ?? ''),
                 subtitle: '#'.$number.' · '.(string) data_get($issue, 'user.login', '—'),
                 url: (string) ($issue['html_url'] ?? ''),
-                badge: $comments > 0 ? $comments.' 💬' : null,
-                badgeColor: 'neutral',
                 icon: 'circle-dashed',
                 timestamp: (string) ($issue['updated_at'] ?? ''),
             );
