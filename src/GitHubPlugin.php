@@ -70,12 +70,12 @@ class GitHubPlugin implements DefinesActivities, Plugin, ProvidesListSource, Pro
 
     // --- ProvidesOAuth --------------------------------------------------------
 
-    public function authorizeUrl(): string
+    public function authorizeUrl(array $config = []): string
     {
         return 'https://github.com/login/oauth/authorize';
     }
 
-    public function tokenUrl(): string
+    public function tokenUrl(array $config = []): string
     {
         return 'https://github.com/login/oauth/access_token';
     }
@@ -90,7 +90,7 @@ class GitHubPlugin implements DefinesActivities, Plugin, ProvidesListSource, Pro
         return ['allow_signup' => 'false'];
     }
 
-    public function resolveAccount(string $accessToken): ?string
+    public function resolveAccount(string $accessToken, array $config = []): ?string
     {
         return $this->client(['token' => $accessToken])->account()['login'] ?? null;
     }

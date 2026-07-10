@@ -6,7 +6,7 @@
     "keywords": ["board", "kanban", "plugin", "github"],
     "require": {
         "php": "^8.3",
-        "board/plugin-sdk": "^0.2@dev",
+        "board/plugin-sdk": "^0.2.3",
         "illuminate/support": "^11 || ^12 || ^13",
         "illuminate/http": "^11 || ^12 || ^13",
         "laravel/mcp": "^0.8"
@@ -26,6 +26,9 @@
         }
     },
     "extra": {
+        "board": {
+            "sdk_contract": 1
+        },
         "laravel": {
             "providers": [
                 "Board\\PluginGithub\\GitHubPluginServiceProvider"
