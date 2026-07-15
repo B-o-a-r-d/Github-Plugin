@@ -27,4 +27,13 @@ return [
         'tab' => 'GitHub',
         'linked' => 'a lié le/la :type « :title »',
     ],
+    'automation' => [
+        'create_issue' => 'Créer une issue GitHub',
+        'repo' => 'Dépôt (owner/repo)',
+        'title' => "Titre ({card}, {board}, {list} sont remplacés — vide = titre de la carte)",
+        'body' => 'Description (mêmes gabarits, optionnel)',
+        'labels' => 'Labels (séparés par des virgules, optionnel)',
+        'issue_created' => 'Issue GitHub créée',
+        'open_issue' => "Ouvrir l'issue",
+    ],
 ];

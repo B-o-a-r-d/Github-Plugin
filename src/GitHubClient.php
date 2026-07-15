@@ -168,6 +168,25 @@ class GitHubClient
     }
 
     /**
+     * Create an issue. Throws on HTTP failure so the host's automation
+     * pipeline can count and journal the error.
+     *
+     * @param  array<int, string>  $labels
+     * @return array<string, mixed>
+     */
+    public function createIssue(string $repo, string $title, string $body = '', array $labels = []): array
+    {
+        return $this->request()
+            ->post("/repos/{$repo}/issues", array_filter([
+                'title' => $title,
+                'body' => $body !== '' ? $body : null,
+                'labels' => $labels !== [] ? $labels : null,
+            ]))
+            ->throw()
+            ->json();
+    }
+
+    /**
      * The authenticated account, or null if the token is missing/invalid.
      *
      * @return array{login: string, avatar_url?: string}|null

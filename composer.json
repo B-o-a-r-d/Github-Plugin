@@ -6,7 +6,7 @@
     "keywords": ["board", "kanban", "plugin", "github"],
     "require": {
         "php": "^8.3",
-        "board/plugin-sdk": "^0.2.3",
+        "board/plugin-sdk": "^0.2.6",
         "illuminate/support": "^11 || ^12 || ^13",
         "illuminate/http": "^11 || ^12 || ^13",
         "laravel/mcp": "^0.8"

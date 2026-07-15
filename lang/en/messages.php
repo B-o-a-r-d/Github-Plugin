@@ -27,4 +27,13 @@ return [
         'tab' => 'GitHub',
         'linked' => 'linked the :type ":title"',
     ],
+    'automation' => [
+        'create_issue' => 'Create a GitHub issue',
+        'repo' => 'Repository (owner/repo)',
+        'title' => 'Title ({card}, {board}, {list} are replaced — empty = card title)',
+        'body' => 'Description (same placeholders, optional)',
+        'labels' => 'Labels (comma-separated, optional)',
+        'issue_created' => 'GitHub issue created',
+        'open_issue' => 'Open the issue',
+    ],
 ];

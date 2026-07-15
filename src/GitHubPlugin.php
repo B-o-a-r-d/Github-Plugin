@@ -5,10 +5,12 @@ namespace Board\PluginGithub;
 use Board\PluginGithub\Mcp\GithubCommitsTool;
 use Board\PluginSdk\Contracts\DefinesActivities;
 use Board\PluginSdk\Contracts\Plugin;
+use Board\PluginSdk\Contracts\ProvidesAutomationActions;
 use Board\PluginSdk\Contracts\ProvidesListSource;
 use Board\PluginSdk\Contracts\ProvidesMcpTools;
 use Board\PluginSdk\Contracts\ProvidesOAuth;
 use Board\PluginSdk\PluginListItem;
+use Board\PluginSdk\PluginToast;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -17,7 +19,7 @@ use Illuminate\Support\Str;
  * tab, and an MCP tool. All user-facing strings come from this package's
  * `github::` translations.
  */
-class GitHubPlugin implements DefinesActivities, Plugin, ProvidesListSource, ProvidesMcpTools, ProvidesOAuth
+class GitHubPlugin implements DefinesActivities, Plugin, ProvidesAutomationActions, ProvidesListSource, ProvidesMcpTools, ProvidesOAuth
 {
     public static function key(): string
     {
@@ -186,6 +188,63 @@ class GitHubPlugin implements DefinesActivities, Plugin, ProvidesListSource, Pro
     /**
      * @param  array<string, mixed>  $config
      */
+    // --- ProvidesAutomationActions ---------------------------------------------
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function automationActions(): array
+    {
+        return [[
+            'key' => 'create_issue',
+            'label' => __('github::messages.automation.create_issue'),
+            'configFields' => [
+                ['key' => 'repo', 'label' => __('github::messages.automation.repo'), 'type' => 'text'],
+                ['key' => 'title', 'label' => __('github::messages.automation.title'), 'type' => 'text'],
+                ['key' => 'body', 'label' => __('github::messages.automation.body'), 'type' => 'text'],
+                ['key' => 'labels', 'label' => __('github::messages.automation.labels'), 'type' => 'text'],
+            ],
+        ]];
+    }
+
+    public function runAutomationAction(array $config, string $key, array $card, array $actionConfig): ?PluginToast
+    {
+        if ($key !== 'create_issue') {
+            return null;
+        }
+
+        $repo = trim((string) ($actionConfig['repo'] ?? ''));
+
+        if ($repo === '') {
+            throw new \RuntimeException('github: repository not configured (owner/repo).');
+        }
+
+        $replace = [
+            '{card}' => (string) ($card['title'] ?? ''),
+            '{board}' => (string) ($card['board'] ?? ''),
+            '{list}' => (string) ($card['list'] ?? ''),
+        ];
+
+        $title = trim(strtr((string) ($actionConfig['title'] ?? ''), $replace))
+            ?: ((string) ($card['title'] ?? '') ?: 'Board card');
+        $body = trim(strtr((string) ($actionConfig['body'] ?? ''), $replace));
+        $labels = array_values(array_filter(array_map(trim(...), explode(',', (string) ($actionConfig['labels'] ?? '')))));
+
+        $issue = $this->client($config)->createIssue($repo, $title, $body, $labels);
+
+        $number = (int) ($issue['number'] ?? 0);
+        $url = (string) ($issue['html_url'] ?? '');
+
+        return new PluginToast(
+            message: __('github::messages.automation.issue_created'),
+            description: $number > 0 ? "{$repo}#{$number}" : $repo,
+            duration: 8000,
+            actions: $url === '' ? [] : [
+                ['label' => __('github::messages.automation.open_issue'), 'url' => $url],
+            ],
+        );
+    }
+
     private function client(array $config): GitHubClient
     {
         return new GitHubClient($config['token'] ?? null);
